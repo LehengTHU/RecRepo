@@ -1,0 +1,2 @@
+A person has watched a series of movies. The watching list can be represented as List1: <Seq><SeqHere1></Seq>. After watching another movie, the watching list can further be represented as List2: <Seq><SeqHere2></Seq>. What is the movie in List2 but not in List1? 
+A person has watched a series of movies. The watching list can be represented as List1: <Seq><SeqHere1></Seq>. After watching another movie, the watching list can further be represented as List2: <Seq><SeqHere2></Seq>. What is the movie in List2 but not in List1? 

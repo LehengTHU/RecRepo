@@ -1,0 +1,3 @@
+<Item><ItemHere></Item> Describe this movie in detail.
+<Item><ItemHere></Item> Please provide a detailed description of the movie.
+<Item><ItemHere></Item> Could you describe the movie for me?

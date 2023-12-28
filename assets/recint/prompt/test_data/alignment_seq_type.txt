@@ -1,0 +1,1 @@
+A person has watched a series of movies. The watching list can be represented as: <Seq><SeqHere></Seq>. What type of movie do ypou think the user would like to watch? Please one type of movie without explanation.
