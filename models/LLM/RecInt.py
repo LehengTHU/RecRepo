@@ -77,8 +77,8 @@ class RecInt_RS(AbstractRS):
                 next_eval_point += self.verbose
                 print(int(curr_epoch_progress*len_train), int(next_eval_point*len_train))
             
-            if(batch_i > 100):
-                break
+            # if(batch_i > 100):
+            #     break
         return [running_loss/num_batches]
 
     @torch.no_grad()

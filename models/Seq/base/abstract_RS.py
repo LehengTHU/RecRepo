@@ -25,30 +25,43 @@ class AbstractRS(nn.Module):
         
 
     def parse_args(self, args):
-        self.data_directory = './data/' + args.dataset
-        self.saveID = args.saveID
+        self.args = args
+        # General Args
+        self.rs_type = args.rs_type
+        self.model_name = args.model_name
         self.dataset_name = args.dataset
+
+        self.device = torch.device(args.cuda)
         self.test_only = args.test_only
-        self.patience = args.patience
-        self.lr = args.lr
-        self.l2_decay = args.l2_decay
-        self.batch_size = args.batch_size
+        self.clear_checkpoints = args.clear_checkpoints
+        self.saveID = args.saveID
+
+        self.seed = args.seed
         self.max_epoch = args.max_epoch
+        self.verbose = args.verbose
+        self.patience = args.patience
+
+        # Model Args
+        self.batch_size = args.batch_size
+        self.lr = args.lr
+        self.hidden_size = args.hidden_size
+        self.weight_decay = args.weight_decay
+        self.dropout = args.dropout
+
+        # Sequential Model Args
         self.reward_click = args.r_click
         self.reward_buy = args.r_buy
-        self.verbose = args.verbose
-        self.topk=[10, 20, 50]
-        # self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device(args.cuda)
-        self.running_model = args.model_name
         self.loss = args.loss
-        self.saveID = self.saveID + "_batch_size=" + str(args.batch_size)\
-                + "_lr=" + str(args.lr) 
-        self.base_path = './weights/{}/{}/{}'.format(self.dataset_name, self.running_model, self.saveID)
-        self.checkpoint_buffer=[]
 
     def preperation(self):
+        self.data_directory = './data/' + self.dataset_name
+        self.saveID = self.saveID + "_batch_size=" + str(self.batch_size)\
+                + "_lr=" + str(self.lr) 
+        self.base_path = './weights/{}/{}/{}/{}'.format(self.rs_type, self.dataset_name, self.model_name, self.saveID)
         ensureDir(self.base_path)
+        self.topk=[10, 20, 50]
+        self.checkpoint_buffer=[]
+        self.best_valid_epoch = 0
 
     def load_data(self):
         self.data = AbstractData(self.args)
@@ -61,13 +74,13 @@ class AbstractRS(nn.Module):
         print(self.args)
 
     def load_model(self):
-        exec('from models.'+ self.running_model + ' import ' + self.running_model)
-        print('Model %s loaded!' % (self.running_model))
-        self.model = eval(self.running_model + '(self.args)')
+        exec('from models.Seq.'+ self.model_name + ' import ' + self.model_name)
+        print('Model %s loaded!' % (self.model_name))
+        self.model = eval(self.model_name + '(self.args)')
         self.model.to(self.device)
 
     def set_optimizer(self):
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, eps=1e-8, weight_decay=self.l2_decay)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, eps=1e-8, weight_decay=self.weight_decay)
 
     def get_loss_function(self):
         def bpr_loss(pos_scores, neg_scores):
@@ -95,18 +108,18 @@ class AbstractRS(nn.Module):
             self.train()
             # test the model
             print("start testing")
-            self.model = self.restore_certain_checkpoint(self.data.best_valid_epoch, self.model, self.base_path, self.device)
+            self.model = self.restore_certain_checkpoint(self.best_valid_epoch, self.model, self.base_path, self.device)
         end_time = time.time()
 
         self.model.eval() # evaluate the best model
-        print_str = "The best epoch is % d, total training cost is %.1f" % (max(self.data.best_valid_epoch, self.start_epoch), end_time - start_time)
+        print_str = "The best epoch is % d, total training cost is %.1f" % (max(self.best_valid_epoch, self.start_epoch), end_time - start_time)
         with open(self.base_path +'stats.txt', 'a') as f:
             f.write(print_str + "\n")
 
-        print('VAL PHRASE:')
-        hr_20 = self.evaluate(self.model, self.data.valid_data, self.device, name='valid')
+        print('Validation Phase:')
+        stop_metric = self.evaluate(self.model, self.data.valid_data, self.device, name='valid')
 
-        print('TEST PHRASE:')
+        print('Test Phase:')
         _ = self.evaluate(self.model, self.data.test_data, self.device, name='test')
 
         # self.recommend_top_k()
@@ -115,7 +128,7 @@ class AbstractRS(nn.Module):
     def train(self) -> None:
         # TODO
         self.total_step=0
-        self.hr_max = 0
+        self.stop_metric_max = 0
         self.best_epoch = 0
         self.current_patience = 0
 
@@ -190,18 +203,18 @@ class AbstractRS(nn.Module):
 
     def eval_and_check_early_stop(self, epoch):
         self.model.eval()
-        print('VAL PHRASE:')
-        hr_20 = self.evaluate(self.model, self.data.valid_data, self.device, name='valid')
-        # hr_20 = self.evaluate(self.model, self.data.valid_data, self.device, name='valid')
+        print('Validation Phase:')
+        stop_metric = self.evaluate(self.model, self.data.valid_data, self.device, name='valid')
+        # stop_metric = self.evaluate(self.model, self.data.valid_data, self.device, name='valid')
         # self.model.train()
-        # hr_20 = self.evaluate(self.model, self.data.valid_data, self.device, name='valid')
-        # hr_20 = self.evaluate(self.model, self.data.valid_data, self.device, name='valid')
+        # stop_metric = self.evaluate(self.model, self.data.valid_data, self.device, name='valid')
+        # stop_metric = self.evaluate(self.model, self.data.valid_data, self.device, name='valid')
         # print('TEST PHRASE:')
         # _ = self.evaluate(self.model, self.data.test_data, self.device, name='test')
 
-        if hr_20 > self.hr_max:
-            self.hr_max = hr_20
-            self.data.best_valid_epoch = epoch
+        if stop_metric > self.stop_metric_max:
+            self.stop_metric_max = stop_metric
+            self.best_valid_epoch = epoch
             self.current_patience = 0
             checkpoint_buffer = self.save_checkpoint(self.model, epoch, self.base_path, self.checkpoint_buffer, 5)
         
@@ -211,7 +224,7 @@ class AbstractRS(nn.Module):
                 self.stop_flag = True
                 print('Early stop at epoch %d' % epoch)
         
-        print('BEST EPOCH:{}'.format(self.data.best_valid_epoch))
+        print('BEST EPOCH:{}'.format(self.best_valid_epoch))
         self.model.train()
     
     @torch.no_grad()

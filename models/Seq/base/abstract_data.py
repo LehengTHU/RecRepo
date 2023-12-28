@@ -4,7 +4,7 @@ import os
 class AbstractData:
     def __init__(self, args):
         self.args = args
-        self.data_directory = './data/' + args.dataset
+        self.data_directory = './data/Seq/' + args.dataset
         self.load_data()
         self.get_attributes()
 
@@ -18,4 +18,4 @@ class AbstractData:
         self.seq_size = self.data_statis['seq_size'][0]  # the length of history to define the seq
         self.item_num = self.data_statis['item_num'][0]  # total number of items
 
-        self.best_valid_epoch = 0
+        # self.best_valid_epoch = 0
