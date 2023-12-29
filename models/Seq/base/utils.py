@@ -22,6 +22,7 @@ def pad_history(itemlist,length,pad_item):
         return itemlist
 
 def calculate_hit(sorted_list,topk,true_items,rewards,r_click,total_reward,hit_click,ndcg_click,hit_purchase,ndcg_purchase):
+    # Calculate hit ratio and NDCG
     for i in range(len(topk)):
         rec_list = sorted_list[:, -topk[i]:]
         for j in range(len(true_items)):

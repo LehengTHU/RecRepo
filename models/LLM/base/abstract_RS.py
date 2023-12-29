@@ -57,7 +57,17 @@ class AbstractRS(nn.Module):
         self.best_valid_epoch = 0
 
     def load_data(self):
-        self.data = AbstractData(self.args)
+        # 
+        exec('from models.LLM.'+ self.model_name + ' import ' + self.model_name + '_Data') # load special dataset
+        self.data = eval(self.model_name + '_Data(self.args)') 
+        try:
+            
+            exec('from models.LLM.'+ self.model_name + ' import ' + self.model_name + '_Data') # load special dataset
+            self.data = eval(self.model_name + '_Data(self.args)') 
+            cprint(f"[INFO] Dataset {self.dataset_name} for {self.model_name} is loaded", color='green', attrs=['bold'])
+        except:
+            cprint(f"[Warning] Dataset for {self.model_name} is not implemented", color='red', attrs=['bold'])
+            self.data = AbstractData(self.args)
 
     def add_additional_args(self):
         # raise NotImplementedError
@@ -65,8 +75,8 @@ class AbstractRS(nn.Module):
 
     def load_model(self):
         exec('from models.LLM.'+ self.model_name + ' import ' + self.model_name)
-        print('Model %s loaded!' % (self.model_name))
         self.model = eval(self.model_name + '(self.args)')
+        print('Model %s loaded!' % (self.model_name))
         self.model.to(self.device)
     
     def get_loss_function(self):
@@ -126,8 +136,11 @@ class AbstractRS(nn.Module):
                 self.eval_and_check_early_stop(epoch)
 
     def train_one_epoch(self, epoch):
-        raise NotImplementedError
+        # raise NotImplementedError
         # if()
+        cprint(f"[INFO] Start training epoch {epoch}", color='green', attrs=['bold'])
+        cprint("[Warning] The func 'train_one_epoch' is not implemented!", color='red', attrs=['bold'])
+        return [0]
 
     def document_running_loss(self, losses:list, epoch, t_one_epoch, prefix=""):
         loss_str = ', '.join(['%.5f']*len(losses)) % tuple(losses)
@@ -138,7 +151,7 @@ class AbstractRS(nn.Module):
 
     def eval_and_check_early_stop(self, epoch, epoch_progress=0):
         self.model.eval()
-        cprint(f"[INFO] Start evaluating and checking early stop", color='green', attrs=['bold'])
+        cprint(f"[INFO] Start evaluating and checking early stop at epoch {epoch+epoch_progress}", color='green', attrs=['bold'])
         stop_metric = self.evaluate(self.model, self.data.test_data, self.device, name='valid')
 
         if stop_metric > self.stop_metric_max:

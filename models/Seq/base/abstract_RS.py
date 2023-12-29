@@ -281,6 +281,7 @@ class AbstractRS(nn.Module):
 
         hr_list = []
         ndcg_list = []
+        # Divide by number of users
         for i in range(len(self.topk)):
             hr_purchase=hit_purchase[i]/total_purchase
             ng_purchase=ndcg_purchase[i]/total_purchase

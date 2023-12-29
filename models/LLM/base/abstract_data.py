@@ -7,10 +7,10 @@ class AbstractData:
     def __init__(self, args):
         self.args = args
         self.dataset = args.dataset
-        self.data_directory = './data/' + args.dataset
+        self.data_directory = './data/LLM/' + args.dataset
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.load_data()
-        self.get_attributes()
+        self.get_additional_attributes()
 
     def load_data(self):
         if self.dataset == 'ml100k' or self.dataset == 'test_data':
@@ -28,7 +28,7 @@ class AbstractData:
         else:
             raise ValueError("Dataset: {} is not supported".format(self.dataset))
     
-    def get_attributes(self):
+    def get_additional_attributes(self):
     #     self.seq_size = self.data_statis['seq_size'][0]  # the length of history to define the seq
     #     self.item_num = self.data_statis['item_num'][0]  # total number of items
 

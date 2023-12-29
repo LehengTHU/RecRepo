@@ -185,6 +185,7 @@ class RecInt(nn.Module):
     def __init__(self, args):
         super().__init__()
 
+        self.args = args
         self.dataset_name = args.dataset
         self.rec_size = args.rec_size
         self.recommender = args.recommender
