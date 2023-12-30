@@ -94,9 +94,14 @@ def generate_and_tokenize_prompt(data_point, tokenizer, cutoff_len, train_on_inp
 
 def compute_metrics(eval_preds):
     pre, labels = eval_preds
+    print(pre[0])
+    print(pre[1])
+    print(labels)
     auc = roc_auc_score(pre[1], pre[0])
     return {'auc': auc}
 
+# No 1939, 3782
+# Yes 8241, 3869
 def preprocess_logits_for_metrics(logits, labels):
     """
     Original Trainer may have a memory leak. 
@@ -120,6 +125,8 @@ class TALLRec_RS(AbstractRS):
         self.cutoff_len = args.cutoff_len
         self.train_on_inputs = not args.not_train_on_inputs
         self.group_by_length = not args.not_group_by_length
+        print(self.train_on_inputs)
+        print(self.group_by_length)
 
     def preperation(self):
         super().preperation()
@@ -239,27 +246,7 @@ class TALLRec(nn.Module):
         )
         self.llm = get_peft_model(self.llm, self.ft_config)
         self.llm.print_trainable_parameters()
-    
-    def tokenize(self, prompt, add_eos_token=True):
-        result = self.tokenizer(
-            prompt,
-            truncation=True,
-            max_length=self.cutoff_len,
-            padding=False,
-            return_tensors=None,
-        )
-        if (
-            result["input_ids"][-1] != self.tokenizer.eos_token_id
-            and len(result["input_ids"]) < self.cutoff_len
-            and add_eos_token
-        ):
-            result["input_ids"].append(self.tokenizer.eos_token_id)
-            result["attention_mask"].append(1)
 
-        result["labels"] = result["input_ids"].copy()
-
-        return result
-    
 
 
 
