@@ -15,8 +15,6 @@ from torch.utils.data import Dataset, DataLoader
 from reckit import randint_choice
 import os
 
-from numba import jit
-
 # Helper function used when loading data from files
 def helper_load(filename):
     user_dict_list = {}

@@ -134,6 +134,8 @@ logs/
 weights/
 
 /*.ipynb
+!/generate_cmd_general.ipynb
+!/generate_cmd_seq.ipynb
 /*.sh
 
 scripts/

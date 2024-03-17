@@ -2,6 +2,15 @@
 
 ## Quick Start
 
+### General recommendation
+
+Before using the general recommendation, run the following command to install the evaluator:
+```bash
+pushd models/General/base
+python setup.py build_ext --inplace
+popd
+```
+
 
 ## File Structure
 ```

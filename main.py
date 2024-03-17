@@ -10,11 +10,6 @@ if __name__ == '__main__':
 
     rs_type = args.rs_type # LLM, Seq, General, etc.
     print(f'from models.{rs_type}.'+ args.model_name + ' import ' + args.model_name + '_RS')
-    # f'from models.{args.rs_type}.'+ args.model_name + ' import ' + args.model_name + '_RS'
-    # from models.Seq.Caser import Caser_RS
-    # from models.General.MF import MF_RS
-    # from models.General.IntentCF import IntentCF_RS
-    # from models.General.Pop import Pop_RS
     try:
         exec(f'from models.{args.rs_type}.'+ args.model_name + ' import ' + args.model_name + '_RS') # load the model
     except:
@@ -25,7 +20,6 @@ if __name__ == '__main__':
     except:
         RS = eval(args.model_name + '_RS(args)')
 
-    # RS = IntentCF_RS(args, special_args) # load the recommender system  
     RS.execute() # train and test
     print('Done!')
 
