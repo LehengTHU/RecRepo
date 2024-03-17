@@ -140,6 +140,10 @@ weights/
 
 scripts/
 
+models/General/LIntCF.py
+models/General/LIntCF_semcl.py
+models/General/IntentCF.py
+
 data/Raw_data/*
 data/General/*
 !data/General/ml-1m/
