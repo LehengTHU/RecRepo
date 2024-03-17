@@ -133,6 +133,28 @@ logs/
 .vscode/
 weights/
 
-models/General/
+/*.ipynb
+/*.sh
 
-*.ipynb
+scripts/
+
+data/Raw_data/*
+data/General/*
+!data/General/ml-1m/
+!data/General/steam/
+!data/General/amazon_book_2014/
+
+data/General/*/cf_data/*.npz
+data/General/*/item_info/
+data/General/*/generate_data.ipynb
+
+data/General/*/raw_data/
+
+
+# !data/General//ml-1m/
+# data/General/*/emb_dict/
+# data/General/*/profiles/
+
+# data/General/*/item_info/
+
+# !data/General//*

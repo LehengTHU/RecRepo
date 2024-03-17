@@ -4,20 +4,28 @@ import os
 import torch
 
 if __name__ == '__main__':
-    args = parse_args()
+    args, special_args = parse_args()
 
     fix_seeds(args.seed) # set random seed
 
     rs_type = args.rs_type # LLM, Seq, General, etc.
     print(f'from models.{rs_type}.'+ args.model_name + ' import ' + args.model_name + '_RS')
     # f'from models.{args.rs_type}.'+ args.model_name + ' import ' + args.model_name + '_RS'
+    # from models.Seq.Caser import Caser_RS
+    # from models.General.MF import MF_RS
+    # from models.General.IntentCF import IntentCF_RS
+    # from models.General.Pop import Pop_RS
     try:
         exec(f'from models.{args.rs_type}.'+ args.model_name + ' import ' + args.model_name + '_RS') # load the model
     except:
         print('Model %s not implemented!' % (args.model_name))
     
-    RS = eval(args.model_name + '_RS(args)') # load the recommender system
+    try:
+        RS = eval(args.model_name + '_RS(args, special_args)') # load the recommender system
+    except:
+        RS = eval(args.model_name + '_RS(args)')
 
+    # RS = IntentCF_RS(args, special_args) # load the recommender system  
     RS.execute() # train and test
     print('Done!')
 

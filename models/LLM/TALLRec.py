@@ -94,9 +94,6 @@ def generate_and_tokenize_prompt(data_point, tokenizer, cutoff_len, train_on_inp
 
 def compute_metrics(eval_preds):
     pre, labels = eval_preds
-    print(pre[0])
-    print(pre[1])
-    print(labels)
     auc = roc_auc_score(pre[1], pre[0])
     return {'auc': auc}
 

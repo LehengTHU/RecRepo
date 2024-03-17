@@ -26,15 +26,20 @@ def parse_args():
                         help='Random seed.')
     parser.add_argument('--max_epoch', type=int, default=500,
                         help='Number of max epochs.')
-    parser.add_argument('--verbose', type=float, default=1,
+    parser.add_argument('--verbose', type=float, default=5,
                         help='Interval of evaluation.')
     parser.add_argument('--patience', type=int, default=10,
                         help='Early stopping point.')
 
+    parser.add_argument("--mix", action="store_true",
+                        help="whether to use mixed dataset")
+
     # Model Args
-    parser.add_argument('--batch_size', type=int, default=256,
+    parser.add_argument('--batch_size', type=int, default=512,
                         help='Batch size.')
-    parser.add_argument('--lr', type=float, default=0.001,
+    # parser.add_argument('--lr', type=float, default=0.001,
+    #                     help='Learning rate.')
+    parser.add_argument('--lr', type=float, default=5e-4,
                         help='Learning rate.')
     parser.add_argument('--hidden_size', type=int, default=64,
                         help='Number of hidden factors, i.e., embedding size.')
@@ -42,8 +47,84 @@ def parse_args():
                         help='weight decay for optimizer.')
     parser.add_argument('--dropout', type=float, default=0.1,
                         help='dropout ')
-    
+    parser.add_argument("--no_wandb", action="store_true",
+                        help="whether to use wandb")
+
     args, _ = parser.parse_known_args()
+
+    if(args.rs_type == 'General'):
+        parser.add_argument("--candidate", action="store_true",
+                            help="whether using the candidate set")
+        parser.add_argument('--Ks', type = int, default= 20,
+                            help='Evaluate on Ks optimal items.')
+        parser.add_argument('--neg_sample',type=int,default=1)
+        parser.add_argument('--infonce', type=int, default=0,
+                    help='whether to use infonce loss or not')
+        parser.add_argument("--train_norm", action="store_true",
+                            help="train_norm")
+        parser.add_argument("--pred_norm", action="store_true",
+                            help="pred_norm")
+        parser.add_argument('--n_layers', type=int, default=0,
+                            help='Number of GCN layers')
+        parser.add_argument('--data_path', nargs='?', default='./data/General/',
+                            help='Input data path.')
+        parser.add_argument("--nodrop", action="store_true",
+                            help="whether to drop out the enhanced training dataset")
+        parser.add_argument('--num_workers', type=int, default=8,
+                            help='number of workers in data loader')
+        parser.add_argument('--regs', type=float, default=1e-5,
+                            help='Regularization.')
+        parser.add_argument('--max2keep', type=int, default=1,
+                            help='max checkpoints to keep')
+        args, _ = parser.parse_known_args()
+        # INFONCE
+        if(args.model_name == 'InfoNCE'):
+            parser.add_argument('--tau', type=float, default=0.1,
+                            help='temperature parameter')
+        
+        # MultVAE
+        if(args.model_name == 'MultVAE'):
+            parser.add_argument('--total_anneal_steps', type=int, default=200000,
+                            help='total anneal steps')
+            parser.add_argument('--anneal_cap', type=float, default=0.2,
+                            help='anneal cap')
+            parser.add_argument('--p_dim0', type=int, default=200,
+                            help='p_dim0')
+            parser.add_argument('--p_dim1', type=int, default=600,
+                            help='p_dim1')
+            
+        # RLMRec
+        if(args.model_name == 'RLMRec'):
+            parser.add_argument('--kd_temperature', type=float, default=0.2,
+                            help='temperature parameter')
+            parser.add_argument('--kd_weight', type=float, default=1e-2,
+                            help='kd_weight')
+
+        # AgentRerank
+        if('IntentCF' in args.model_name):
+            parser.add_argument('--tau', type=float, default=0.1,
+                            help='temperature parameter')
+
+        if('LIntCF' in args.model_name):
+            parser.add_argument('--tau', type=float, default=0.1,
+                            help='temperature parameter')
+            
+            parser.add_argument('--lambda_cl', type=float, default=1,
+                                    help='Rate of contrastive loss')
+            parser.add_argument('--temp_cl', type=float, default=0.15,
+                                    help='Temperature of contrastive loss')
+            parser.add_argument('--eps', type=float, default=0.1,
+                                help='Noise rate')
+        
+        if(args.model_name == "XSimGCL"):
+            parser.add_argument('--lambda_cl', type=float, default=0.1,
+                                help='Rate of contrastive loss')
+            parser.add_argument('--temp_cl', type=float, default=0.15,
+                                help='Temperature of contrastive loss')
+            parser.add_argument('--layer_cl', type=int, default=1,
+                                help='Number of layers for contrastive loss')
+            parser.add_argument('--eps_XSimGCL', type=float, default=0.1,
+                                help='Noise rate for XSimGCL')
 
     if(args.rs_type == 'Seq'):
         parser.add_argument('--r_click', type=float, default=0.2,
@@ -55,6 +136,8 @@ def parse_args():
         parser.add_argument('--loss', type=str, default='bpr',
                             choices=['bpr', 'bce', 'mse'],
                             help='loss function.')
+        args, _ = parser.parse_known_args()
+
         # Model-specific Args
         if(args.model_name == 'Caser'):
             parser.add_argument('--num_filters', type=int, default=16,
@@ -70,13 +153,14 @@ def parse_args():
             parser.add_argument('--num_heads', type=int, default=1,
                                 help='num_heads')
 
-
     if(args.rs_type == 'LLM'):
         parser.add_argument('--llm_path', type=str, default='meta-llama/Llama-2-7b-hf',
                         help='path to llm model')
         parser.add_argument('--micro_batch_size', type=int, default=32,
                         help='micro batch size')
         
+        args, _ = parser.parse_known_args()
+
         if(args.model_name == 'RecInt'):
             parser.add_argument('--recommender', type=str, default='SASRec',
                             help='SASRec, Caser, GRU4Rec, DreamRec')
@@ -105,9 +189,12 @@ def parse_args():
         #     parser.add_argument('--llm_path', type=str, default='meta-llama/Llama-2-7b-hf',
         #                     help='path to llm model')
 
+    # args_full, _ = parser.parse_known_args()
+
+    # return args_full
 
     args_full, _ = parser.parse_known_args()
+    special_args = list(set(vars(args_full).keys()) - set(vars(args).keys()))
+    special_args.sort()
 
-    return args_full
-
-
+    return args_full, special_args

@@ -329,7 +329,6 @@ class RecInt(nn.Module):
 
         return mixed_embs
 
-
     def prompt_wrap(self, seq_embeds, atts_seq, prompts):
         if prompts:
             emb_lists = []
@@ -504,7 +503,6 @@ class RecInt(nn.Module):
 
         inputs_embeds = torch.cat([bos_embeds, seq_embeds], dim=1)
         attention_mask = torch.cat([atts_bos, atts_seq], dim=1)
-
 
         generate_ids = self.llama_model.generate(
             inputs_embeds=inputs_embeds,
