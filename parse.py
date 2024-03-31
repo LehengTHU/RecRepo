@@ -35,7 +35,7 @@ def parse_args():
                         help="whether to use mixed dataset")
 
     # Model Args
-    parser.add_argument('--batch_size', type=int, default=512,
+    parser.add_argument('--batch_size', type=int, default=4096,
                         help='Batch size.')
     # parser.add_argument('--lr', type=float, default=0.001,
     #                     help='Learning rate.')

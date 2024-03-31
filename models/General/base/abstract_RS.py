@@ -329,7 +329,6 @@ class AbstractRS(nn.Module):
 
         epoch = max(epoch_list)
 
-    
         if not force:
             print("Which epoch to load from? Choose in range [0, {})."
                 .format(epoch), "Enter 0 to train from scratch.")
@@ -439,6 +438,17 @@ class AbstractRS(nn.Module):
             eval_valid = ProxyEvaluator(data,eval_train_user_list,data.valid_user_list,top_k=[K_value],dump_dict=merge_user_list([eval_train_user_list, data.test_user_list]))  
             eval_test = ProxyEvaluator(data,eval_train_user_list,data.test_user_list,top_k=[K_value],dump_dict=merge_user_list([eval_train_user_list, data.valid_user_list]))
 
+            evaluators=[eval_valid, eval_test]
+            eval_names=["valid", "test"]
+            
+            for i, data_name in enumerate(self.data.mixed_datasets):
+                mask_ = list(set(list(range(self.data.n_items))) - set(list(range(self.data.cum_ni_info[i], self.data.cum_ni_info[i+1]))))
+                eval_valid_ = ProxyEvaluator(data,data.selected_train[i],data.selected_valid[i],top_k=[K_value],dump_dict=merge_user_list([data.selected_train[i], data.selected_test[i]]), masked_items=mask_)
+                eval_test_ = ProxyEvaluator(data,data.selected_train[i],data.selected_test[i],top_k=[K_value],dump_dict=merge_user_list([data.selected_train[i], data.selected_valid[i]]), masked_items=mask_)
+                evaluators.append(eval_valid_)
+                evaluators.append(eval_test_)
+                eval_names.append(data_name + "_valid")
+                eval_names.append(data_name + "_test")
             # mask_movie = {k: list(range(3043, 3043+40523)) for k in data.train_user_list_movie}
             # eval_valid_movie = ProxyEvaluator(data,data.train_user_list_movie,data.valid_user_list_movie,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_movie, data.test_user_list_movie, mask_movie]))
             # eval_test_movie = ProxyEvaluator(data,data.train_user_list_movie,data.test_user_list_movie,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_movie, data.valid_user_list_movie, mask_movie]))
@@ -448,22 +458,22 @@ class AbstractRS(nn.Module):
             # eval_test_book = ProxyEvaluator(data,data.train_user_list_book,data.test_user_list_book,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_book, data.valid_user_list_book, mask_book]))
 
             # mask_movie = {k: list(range(3043, 3043+40523+13420)) for k in data.train_user_list_movie}
-            mask_movie = list(range(3043, 3043+40523+13420))
-            eval_valid_movie = ProxyEvaluator(data,data.train_user_list_movie,data.valid_user_list_movie,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_movie, data.test_user_list_movie]), masked_items=mask_movie)
-            eval_test_movie = ProxyEvaluator(data,data.train_user_list_movie,data.test_user_list_movie,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_movie, data.valid_user_list_movie]), masked_items=mask_movie)
+            # mask_movie = list(range(3043, 3043+40523+13420))
+            # eval_valid_movie = ProxyEvaluator(data,data.train_user_list_movie,data.valid_user_list_movie,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_movie, data.test_user_list_movie]), masked_items=mask_movie)
+            # eval_test_movie = ProxyEvaluator(data,data.train_user_list_movie,data.test_user_list_movie,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_movie, data.valid_user_list_movie]), masked_items=mask_movie)
 
-            # mask_book = {k: list(range(0, 3043)) + list(range(3043+40523, 3043+40523+13420)) for k in data.train_user_list_book}
-            mask_book = list(range(0, 3043)) + list(range(3043+40523, 3043+40523+13420)) 
-            eval_valid_book = ProxyEvaluator(data,data.train_user_list_book,data.valid_user_list_book,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_book, data.test_user_list_book]), masked_items=mask_book)
-            eval_test_book = ProxyEvaluator(data,data.train_user_list_book,data.test_user_list_book,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_book, data.valid_user_list_book]), masked_items=mask_book)
+            # # mask_book = {k: list(range(0, 3043)) + list(range(3043+40523, 3043+40523+13420)) for k in data.train_user_list_book}
+            # mask_book = list(range(0, 3043)) + list(range(3043+40523, 3043+40523+13420)) 
+            # eval_valid_book = ProxyEvaluator(data,data.train_user_list_book,data.valid_user_list_book,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_book, data.test_user_list_book]), masked_items=mask_book)
+            # eval_test_book = ProxyEvaluator(data,data.train_user_list_book,data.test_user_list_book,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_book, data.valid_user_list_book]), masked_items=mask_book)
 
-            # mask_game = {k: list(range(0, 3043+40523)) for k in data.train_user_list_game}
-            mask_game = list(range(0, 3043+40523))
-            eval_valid_game = ProxyEvaluator(data,data.train_user_list_game,data.valid_user_list_game,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_game, data.test_user_list_game]), masked_items=mask_game)
-            eval_test_game = ProxyEvaluator(data,data.train_user_list_game,data.test_user_list_game,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_game, data.valid_user_list_game]), masked_items=mask_game)
+            # # mask_game = {k: list(range(0, 3043+40523)) for k in data.train_user_list_game}
+            # mask_game = list(range(0, 3043+40523))
+            # eval_valid_game = ProxyEvaluator(data,data.train_user_list_game,data.valid_user_list_game,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_game, data.test_user_list_game]), masked_items=mask_game)
+            # eval_test_game = ProxyEvaluator(data,data.train_user_list_game,data.test_user_list_game,top_k=[K_value],dump_dict=merge_user_list([data.train_user_list_game, data.valid_user_list_game]), masked_items=mask_game)
 
-            evaluators=[eval_valid, eval_test, eval_valid_movie, eval_test_movie, eval_valid_book, eval_test_book, eval_valid_game, eval_test_game]
-            eval_names=["valid", "test", "valid_movie", "test_movie", "valid_book", "test_book", "valid_game", "test_game"]
+            # evaluators=[eval_valid, eval_test, eval_valid_movie, eval_test_movie, eval_valid_book, eval_test_book, eval_valid_game, eval_test_game]
+            # eval_names=["valid", "test", "valid_movie", "test_movie", "valid_book", "test_book", "valid_game", "test_game"]
 
             # evaluators=[eval_valid_movie, eval_test_movie, eval_valid_book, eval_test_book]
             # eval_names=["valid_movie", "test_movie", "valid_book", "test_book"]

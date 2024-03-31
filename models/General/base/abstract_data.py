@@ -14,6 +14,7 @@ import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 from reckit import randint_choice
 import os
+import bisect
 
 # Helper function used when loading data from files
 def helper_load(filename):
@@ -240,63 +241,93 @@ class AbstractData:
         if(self.mix):
             self.add_mixed_data()
         else:
-            self.select_items = None
-            self.nui_info = None
+            self.selected_train, self.selected_valid, self.selected_test = [], [], []
+            self.nu_info = []
+            self.ni_info = []
 
     def add_mixed_data(self):
-        self.train_file_movie, self.valid_file_movie, self.test_file_movie = self.path + 'train_movie.txt', self.path + 'valid_movie.txt', self.path + 'test_movie.txt'
-        self.train_user_list_movie, train_item_movie, __, ___, ____ = helper_load_train(self.train_file_movie)
-        self.valid_user_list_movie, valid_item_movie = helper_load(self.valid_file_movie)
-        self.test_user_list_movie, test_item_movie = helper_load(self.test_file_movie)
+        self.selected_train, self.selected_valid, self.selected_test = [], [], []
+        self.nu_info = []
+        self.ni_info = []
+        self.mixed_datasets = ['movie', 'book', 'game']
+        for data_name in self.mixed_datasets:
+            train_train_file_, valid_file_, test_file_ = self.path + 'train_' + data_name + '.txt', self.path + 'valid_' + data_name + '.txt', self.path + 'test_' + data_name + '.txt'
+            train_user_list_, train_item_, __, ___, ____ = helper_load_train(train_train_file_)
+            valid_user_list_, valid_item_ = helper_load(valid_file_)
+            test_user_list_, test_item_ = helper_load(test_file_)
+            
+            temp_lst = [train_item_, valid_item_, test_item_]
+            users_ = list(set(train_user_list_.keys()))
+            items_ = list(set().union(*temp_lst))
+            items_.sort()
+            n_users_ = len(users_)
+            n_items_ = len(items_)
+            print(f"n_users_: {data_name}", n_users_)
+            print(f"n_items_: {data_name}", n_items_)
+            
+            self.selected_train.append(train_user_list_)
+            self.selected_valid.append(valid_user_list_)
+            self.selected_test.append(test_user_list_)
+            self.nu_info.append(n_users_)
+            self.ni_info.append(n_items_)
+            
+            self.cum_ni_info = np.cumsum(self.ni_info)
+            self.cum_ni_info = np.insert(self.cum_ni_info, 0, 0)
+            self.cum_nu_info = np.cumsum(self.nu_info)
+            self.cum_nu_info = np.insert(self.cum_nu_info, 0, 0)
+        # self.train_file_movie, self.valid_file_movie, self.test_file_movie = self.path + 'train_movie.txt', self.path + 'valid_movie.txt', self.path + 'test_movie.txt'
+        # self.train_user_list_movie, train_item_movie, __, ___, ____ = helper_load_train(self.train_file_movie)
+        # self.valid_user_list_movie, valid_item_movie = helper_load(self.valid_file_movie)
+        # self.test_user_list_movie, test_item_movie = helper_load(self.test_file_movie)
 
-        temp_lst = [train_item_movie, valid_item_movie, test_item_movie]
-        self.users_movie = list(set(self.train_user_list_movie.keys()))
-        self.items_movie = list(set().union(*temp_lst))
-        self.items_movie.sort()
-        self.n_users_movie = len(self.users_movie)
-        self.n_items_movie = len(self.items_movie)
-        print("n_users_movie: ", self.n_users_movie)
-        print("n_items_movie: ", self.n_items_movie)
+        # temp_lst = [train_item_movie, valid_item_movie, test_item_movie]
+        # self.users_movie = list(set(self.train_user_list_movie.keys()))
+        # self.items_movie = list(set().union(*temp_lst))
+        # self.items_movie.sort()
+        # self.n_users_movie = len(self.users_movie)
+        # self.n_items_movie = len(self.items_movie)
+        # print("n_users_movie: ", self.n_users_movie)
+        # print("n_items_movie: ", self.n_items_movie)
 
-        self.train_file_book, self.valid_file_book, self.test_file_book = self.path + 'train_book.txt', self.path + 'valid_book.txt', self.path + 'test_book.txt'
-        self.train_user_list_book, train_item_book, __, ___, ____ = helper_load_train(self.train_file_book)
-        self.valid_user_list_book, valid_item_book = helper_load(self.valid_file_book)
-        self.test_user_list_book, test_item_book = helper_load(self.test_file_book)
+        # self.train_file_book, self.valid_file_book, self.test_file_book = self.path + 'train_book.txt', self.path + 'valid_book.txt', self.path + 'test_book.txt'
+        # self.train_user_list_book, train_item_book, __, ___, ____ = helper_load_train(self.train_file_book)
+        # self.valid_user_list_book, valid_item_book = helper_load(self.valid_file_book)
+        # self.test_user_list_book, test_item_book = helper_load(self.test_file_book)
 
-        temp_lst = [train_item_book, valid_item_book, test_item_book]
-        self.users_book = list(set(self.train_user_list_book.keys()))
-        self.items_book = list(set().union(*temp_lst))
-        self.items_book.sort()
-        self.n_users_book = len(self.users_book)
-        self.n_items_book = len(self.items_book)
-        print("n_users_book: ", self.n_users_book)
-        print("n_items_book: ", self.n_items_book)
+        # temp_lst = [train_item_book, valid_item_book, test_item_book]
+        # self.users_book = list(set(self.train_user_list_book.keys()))
+        # self.items_book = list(set().union(*temp_lst))
+        # self.items_book.sort()
+        # self.n_users_book = len(self.users_book)
+        # self.n_items_book = len(self.items_book)
+        # print("n_users_book: ", self.n_users_book)
+        # print("n_items_book: ", self.n_items_book)
         
-        self.train_file_game, self.valid_file_game, self.test_file_game = self.path + 'train_game.txt', self.path + 'valid_game.txt', self.path + 'test_game.txt'
-        self.train_user_list_game, train_item_game, __, ___, ____ = helper_load_train(self.train_file_game)
-        self.valid_user_list_game, valid_item_game = helper_load(self.valid_file_game)
-        self.test_user_list_game, test_item_game = helper_load(self.test_file_game)
+        # self.train_file_game, self.valid_file_game, self.test_file_game = self.path + 'train_game.txt', self.path + 'valid_game.txt', self.path + 'test_game.txt'
+        # self.train_user_list_game, train_item_game, __, ___, ____ = helper_load_train(self.train_file_game)
+        # self.valid_user_list_game, valid_item_game = helper_load(self.valid_file_game)
+        # self.test_user_list_game, test_item_game = helper_load(self.test_file_game)
         
-        temp_lst = [train_item_game, valid_item_game, test_item_game]
-        self.users_game = list(set(self.train_user_list_game.keys()))
-        self.items_game = list(set().union(*temp_lst))
-        self.items_game.sort()
-        self.n_users_game = len(self.users_game)
-        self.n_items_game = len(self.items_game)
-        print("n_users_game: ", self.n_users_game)
-        print("n_items_game: ", self.n_items_game)
+        # temp_lst = [train_item_game, valid_item_game, test_item_game]
+        # self.users_game = list(set(self.train_user_list_game.keys()))
+        # self.items_game = list(set().union(*temp_lst))
+        # self.items_game.sort()
+        # self.n_users_game = len(self.users_game)
+        # self.n_items_game = len(self.items_game)
+        # print("n_users_game: ", self.n_users_game)
+        # print("n_items_game: ", self.n_items_game)
         
         
         # self.exclude_items = [self.items_movie, self.items_book]
-        # self.select_items = [self.train_user_list_movie, self.train_user_list_book]
+        # self.selected_train = [self.train_user_list_movie, self.train_user_list_book]
         # self.nui_info = [[self.n_users_movie, self.n_items_movie], [self.n_users_book, self.n_items_book]]
         
-        self.select_items = [self.train_user_list_movie, self.train_user_list_book, self.train_user_list_game]
-        self.nui_info = [[self.n_users_movie, self.n_items_movie], [self.n_users_book, self.n_items_book], [self.n_users_game, self.n_items_game]]
+        # self.selected_train = [self.train_user_list_movie, self.train_user_list_book, self.train_user_list_game]
+        # self.nui_info = [[self.n_users_movie, self.n_items_movie], [self.n_users_book, self.n_items_book], [self.n_users_game, self.n_items_game]]
 
     def get_dataloader(self):
         self.train_data = TrainDataset(self.model_name, self.users, self.train_user_list, self.user_pop_idx, self.item_pop_idx, \
-                                        self.neg_sample, self.n_observations, self.n_items, self.sample_items, self.infonce, self.items, self.select_items, self.nui_info)
+                                        self.neg_sample, self.n_observations, self.n_items, self.sample_items, self.infonce, self.items, self.nu_info, self.ni_info)
 
         self.train_loader = DataLoader(self.train_data, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers, drop_last=True)
 
@@ -353,7 +384,7 @@ class AbstractData:
 class TrainDataset(torch.utils.data.Dataset):
 
     def __init__(self, model_name, users, train_user_list, user_pop_idx, item_pop_idx, neg_sample, \
-                n_observations, n_items, sample_items, infonce, items, select_items = None, nui_info = None):
+                n_observations, n_items, sample_items, infonce, items, nu_info = None, ni_info = None):
         self.model_name = model_name
         self.users = users
         self.train_user_list = train_user_list
@@ -366,9 +397,13 @@ class TrainDataset(torch.utils.data.Dataset):
         self.infonce = infonce
         self.items = items
 
-        self.select_items = select_items
-        self.nui_info = nui_info
-    
+        self.nu_info = nu_info
+        self.ni_info = ni_info
+        self.cum_ni_info = np.cumsum(self.ni_info)
+        self.cum_ni_info = np.insert(self.cum_ni_info, 0, 0)
+        self.cum_nu_info = np.cumsum(self.nu_info)
+        self.cum_nu_info = np.insert(self.cum_nu_info, 0, 0)
+        
     def __getitem__(self, index):
 
         index = index % len(self.users)
@@ -381,32 +416,34 @@ class TrainDataset(torch.utils.data.Dataset):
         user_pop = self.user_pop_idx[user]
         pos_item_pop = self.item_pop_idx[pos_item]
 
-        if self.infonce == 1 and self.neg_sample == -1:
-
+        if self.infonce == 1 and self.neg_sample == -1: #in-batch
             return user, pos_item, user_pop, pos_item_pop
 
-        elif self.infonce == 1 and self.neg_sample != -1:
-            # if(self.select_items is not None):
-            #     if(index < self.nui_info[0][0]):
-            #         neg_items = randint_choice(self.nui_info[0][1], size=self.neg_sample, exclusion=self.train_user_list[user])
-            #     else:
-            #         # neg_items = randint_choice(self.n_items, size=self.neg_sample, exclusion=self.train_user_list[user]+self.exclude_items[0])
-            #         exclude_items = list(np.array(self.train_user_list[user]) - self.nui_info[0][1])
-            #         neg_items = randint_choice(self.nui_info[1][1], size=self.neg_sample, exclusion=exclude_items)
-            #         neg_items = list(np.array(neg_items) + self.nui_info[0][1])
-            
-            if(self.select_items is not None):
-                if(index < self.nui_info[0][0]):
-                    neg_items = randint_choice(self.nui_info[0][1], size=self.neg_sample, exclusion=self.train_user_list[user])
-                elif(index < self.nui_info[0][0] + self.nui_info[1][0]):
-                    # neg_items = randint_choice(self.n_items, size=self.neg_sample, exclusion=self.train_user_list[user]+self.exclude_items[0])
-                    exclude_items = list(np.array(self.train_user_list[user]) - self.nui_info[0][1])
-                    neg_items = randint_choice(self.nui_info[1][1], size=self.neg_sample, exclusion=exclude_items)
-                    neg_items = list(np.array(neg_items) + self.nui_info[0][1])
-                else:
-                    exclude_items = list(np.array(self.train_user_list[user]) - self.nui_info[0][1] - self.nui_info[1][1])
-                    neg_items = randint_choice(self.nui_info[2][1], size=self.neg_sample, exclusion=exclude_items)
-                    neg_items = list(np.array(neg_items) + self.nui_info[0][1] + self.nui_info[1][1])
+        elif self.infonce == 1 and self.neg_sample != -1: # InfoNCE negative sampling
+            if(len(self.nu_info) > 0):
+                # period = index 
+                period = bisect.bisect_right(self.cum_nu_info, index) - 1
+                # print(self.cum_ni_info)
+                exclude_items = list(np.array(self.train_user_list[user]) - self.cum_ni_info[period])
+                # print('perirod', period)
+                # print("********************")
+                # print('info', self.ni_info[period])
+
+                # neg_items = [1]
+                neg_items = randint_choice(self.ni_info[period], size=self.neg_sample, exclusion=exclude_items)
+                neg_items = list(np.array(neg_items) + self.cum_ni_info[period])
+                
+                # if(index < self.nui_info[0][0]):
+                #     neg_items = randint_choice(self.nui_info[0][1], size=self.neg_sample, exclusion=self.train_user_list[user])
+                # elif(index < self.nui_info[0][0] + self.nui_info[1][0]):
+                #     # neg_items = randint_choice(self.n_items, size=self.neg_sample, exclusion=self.train_user_list[user]+self.exclude_items[0])
+                #     exclude_items = list(np.array(self.train_user_list[user]) - self.nui_info[0][1])
+                #     neg_items = randint_choice(self.nui_info[1][1], size=self.neg_sample, exclusion=exclude_items)
+                #     neg_items = list(np.array(neg_items) + self.nui_info[0][1])
+                # else:
+                #     exclude_items = list(np.array(self.train_user_list[user]) - self.nui_info[0][1] - self.nui_info[1][1])
+                #     neg_items = randint_choice(self.nui_info[2][1], size=self.neg_sample, exclusion=exclude_items)
+                #     neg_items = list(np.array(neg_items) + self.nui_info[0][1] + self.nui_info[1][1])
                     
             else:
                 neg_items = randint_choice(self.n_items, size=self.neg_sample, exclusion=self.train_user_list[user])
@@ -414,7 +451,7 @@ class TrainDataset(torch.utils.data.Dataset):
 
             return user, pos_item, user_pop, pos_item_pop, torch.tensor(neg_items).long(), neg_items_pop
 
-        else:
+        else: # BPR negative sampling. (only sample one negative item)
             while True:
                 idx = rd.randint(0, self.n_items -1)
                 neg_item = self.items[idx]

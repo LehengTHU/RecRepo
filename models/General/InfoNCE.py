@@ -106,7 +106,6 @@ class InfoNCE_batch(AbstractModel):
         denominator = torch.sum(torch.exp(ratings / self.tau), dim = 1)
         ssm_loss = torch.mean(torch.negative(torch.log(numerator/denominator)))
 
-
         regularizer = 0.5 * torch.norm(userEmb0) ** 2 + 0.5 * torch.norm(posEmb0) ** 2
         regularizer = regularizer
         reg_loss = self.decay * regularizer

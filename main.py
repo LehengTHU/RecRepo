@@ -10,6 +10,7 @@ if __name__ == '__main__':
 
     rs_type = args.rs_type # LLM, Seq, General, etc.
     print(f'from models.{rs_type}.'+ args.model_name + ' import ' + args.model_name + '_RS')
+    from models.General.InfoNCE import InfoNCE_RS
     try:
         exec(f'from models.{args.rs_type}.'+ args.model_name + ' import ' + args.model_name + '_RS') # load the model
     except:
