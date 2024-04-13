@@ -4,12 +4,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model.base.abstract_model import AbstractModel
-from model.base.abstract_RS import AbstractRS
+from .base.abstract_model import AbstractModel
+from .base.abstract_RS import AbstractRS
+from .base.abstract_data import AbstractData
 from tqdm import tqdm
 
-# special for SGL
-from data.data import Data
 from scipy.sparse import csr_matrix
 
 import random
@@ -27,11 +26,11 @@ class SGL_RS(AbstractRS):
         for batch_i, batch in pbar:          
             
             batch = [x.cuda(self.device) for x in batch]
-            users, pos_items, users_pop, pos_items_pop, pos_weights  = batch[0], batch[1], batch[2], batch[3], batch[4]
+            users, pos_items, users_pop, pos_items_pop = batch[0], batch[1], batch[2], batch[3]
 
             if self.args.infonce == 0 or self.args.neg_sample != -1:
-                neg_items = batch[5]
-                neg_items_pop = batch[6]
+                neg_items = batch[4]
+                neg_items_pop = batch[5]
 
             self.model.train()
             dropped_adj1 = self.model.get_enhanced_adj(self.data.ui_mat, self.model.droprate)
@@ -50,7 +49,7 @@ class SGL_RS(AbstractRS):
             num_batches += 1
         return [running_loss/num_batches, running_mf_loss/num_batches, running_cl_loss/num_batches, running_reg_loss/num_batches]
 
-class SGL_Data(Data):
+class SGL_Data(AbstractData):
     def __init__(self, args):
         super().__init__(args)
     
@@ -141,8 +140,8 @@ class SGL(AbstractModel):
         return torch.mean(cl_loss)
 
     def cal_cl_loss(self, idx, perturbed_mat1, perturbed_mat2):
-        u_idx = torch.unique(torch.Tensor(idx[0]).type(torch.long)).cuda()
-        i_idx = torch.unique(torch.Tensor(idx[1]).type(torch.long)).cuda()
+        u_idx = torch.unique(torch.Tensor(idx[0]).type(torch.long)).cuda(self.device)
+        i_idx = torch.unique(torch.Tensor(idx[1]).type(torch.long)).cuda(self.device)
         user_view_1, item_view_1 = self.compute(perturbed_mat1)
         user_view_2, item_view_2 = self.compute(perturbed_mat2)
         # view1 = torch.cat((user_view_1[u_idx],item_view_1[i_idx]),0)

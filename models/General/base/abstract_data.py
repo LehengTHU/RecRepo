@@ -250,6 +250,7 @@ class AbstractData:
         self.nu_info = []
         self.ni_info = []
         self.mixed_datasets = ['movie', 'book', 'game']
+        # self.mixed_datasets = ['movie', 'book', 'game', 'electronic']
         for data_name in self.mixed_datasets:
             train_train_file_, valid_file_, test_file_ = self.path + 'train_' + data_name + '.txt', self.path + 'valid_' + data_name + '.txt', self.path + 'test_' + data_name + '.txt'
             train_user_list_, train_item_, __, ___, ____ = helper_load_train(train_train_file_)

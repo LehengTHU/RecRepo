@@ -77,6 +77,8 @@ def parse_args():
         parser.add_argument('--max2keep', type=int, default=1,
                             help='max checkpoints to keep')
         args, _ = parser.parse_known_args()
+        
+        
         # INFONCE
         if(args.model_name == 'InfoNCE'):
             parser.add_argument('--tau', type=float, default=0.1,
@@ -92,13 +94,6 @@ def parse_args():
                             help='p_dim0')
             parser.add_argument('--p_dim1', type=int, default=600,
                             help='p_dim1')
-            
-        # RLMRec
-        if(args.model_name == 'RLMRec'):
-            parser.add_argument('--kd_temperature', type=float, default=0.2,
-                            help='temperature parameter')
-            parser.add_argument('--kd_weight', type=float, default=1e-2,
-                            help='kd_weight')
 
         # AgentRerank
         if('IntentCF' in args.model_name):
@@ -115,8 +110,33 @@ def parse_args():
                                     help='Temperature of contrastive loss')
             parser.add_argument('--eps', type=float, default=0.1,
                                 help='Noise rate')
+
+        #BC_LOSS
+        if(args.model_name == 'BC_Loss'):
+            parser.add_argument('--tau1', type=float, default=0.07,
+                                help='temperature parameter for L1')
+            parser.add_argument('--tau2', type=float, default=0.1,
+                                help='temperature parameter for L2')
+            parser.add_argument('--w_lambda', type=float, default=0.5,
+                                help='weight for combining l1 and l2.')
+            parser.add_argument('--freeze_epoch',type=int,default=5)
+
+        #SimpleX
+        if(args.model_name == 'SimpleX'):
+            parser.add_argument('--w_neg', type=float, default=1)
+            parser.add_argument('--neg_margin',type=float, default=0.4)
         
-        if(args.model_name == "XSimGCL"):
+        # SGL
+        if(args.model_name == 'SGL'):
+            parser.add_argument('--lambda_cl', type=float, default=0.2,
+                                help='Rate of contrastive loss')
+            parser.add_argument('--temp_cl', type=float, default=0.15,
+                                help='Temperature of contrastive loss')
+            parser.add_argument('--droprate', type=float, default=0.1,
+                            help='drop out rate for SGL')
+
+        # XSimGCL
+        if(args.model_name == "XSimGCL" or args.model_name == "RLMRec"):
             parser.add_argument('--lambda_cl', type=float, default=0.1,
                                 help='Rate of contrastive loss')
             parser.add_argument('--temp_cl', type=float, default=0.15,
@@ -125,6 +145,12 @@ def parse_args():
                                 help='Number of layers for contrastive loss')
             parser.add_argument('--eps_XSimGCL', type=float, default=0.1,
                                 help='Noise rate for XSimGCL')
+        # RLMRec
+        if(args.model_name == 'RLMRec'):
+            parser.add_argument('--kd_temperature', type=float, default=0.2,
+                            help='temperature parameter')
+            parser.add_argument('--kd_weight', type=float, default=1e-2,
+                            help='kd_weight')
 
     if(args.rs_type == 'Seq'):
         parser.add_argument('--r_click', type=float, default=0.2,
