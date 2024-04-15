@@ -55,7 +55,7 @@ def parse_args():
     if(args.rs_type == 'General'):
         parser.add_argument("--candidate", action="store_true",
                             help="whether using the candidate set")
-        parser.add_argument('--Ks', type = int, default= 20,
+        parser.add_argument('--Ks', type = int, default= 5,
                             help='Evaluate on Ks optimal items.')
         parser.add_argument('--neg_sample',type=int,default=1)
         parser.add_argument('--infonce', type=int, default=0,

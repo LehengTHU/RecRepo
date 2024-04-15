@@ -43,7 +43,7 @@ class Pop_Data(AbstractData):
     
     def add_special_model_attr(self, args):
         sorted_items = sorted(self.pop_item.items(), key=lambda x: x[1], reverse=True)
-        self.pop_candidates = [x[0] for x in sorted_items[:30*args.Ks]]
+        self.pop_candidates = [x[0] for x in sorted_items[:10*args.Ks]]
         print("pop_candidates: ", sorted(self.pop_candidates))
         # pop_matrix = np.zeros((1, self.n_items))
         # Randomly select 20 items from pop_candidates.
