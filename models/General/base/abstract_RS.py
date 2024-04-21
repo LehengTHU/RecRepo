@@ -47,6 +47,8 @@ class AbstractRS(nn.Module):
         # load the data
         self.dataset_name = args.dataset
         # from models.General.IntentCF import IntentCF_Data
+        # from models.General.UniSRec import UniSRec_Data
+        # self.data = UniSRec_Data(args)
         try:
             print('from models.General.'+ args.model_name + ' import ' + args.model_name + '_Data')
             exec('from models.General.'+ args.model_name + ' import ' + args.model_name + '_Data') # load special dataset

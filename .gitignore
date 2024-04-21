@@ -139,6 +139,7 @@ weights/
 /*.sh
 
 scripts/
+visual_data/
 
 models/General/LIntCF.py
 models/General/LIntCF_semcl.py

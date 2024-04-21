@@ -5,7 +5,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # General Args
-    parser.add_argument('--rs_type', type=str, default='LLM',
+    parser.add_argument('--rs_type', type=str, default='General',
                         choices=['Seq', 'LLM', 'General'],
                         help='Seq, LLM, General')
     parser.add_argument('--model_name', type=str, default='SASRec',
@@ -55,7 +55,7 @@ def parse_args():
     if(args.rs_type == 'General'):
         parser.add_argument("--candidate", action="store_true",
                             help="whether using the candidate set")
-        parser.add_argument('--Ks', type = int, default= 5,
+        parser.add_argument('--Ks', type = int, default= 20,
                             help='Evaluate on Ks optimal items.')
         parser.add_argument('--neg_sample',type=int,default=1)
         parser.add_argument('--infonce', type=int, default=0,
@@ -79,7 +79,7 @@ def parse_args():
         args, _ = parser.parse_known_args()
         
         
-        # INFONCE
+        # InfoNCE
         if(args.model_name == 'InfoNCE'):
             parser.add_argument('--tau', type=float, default=0.1,
                             help='temperature parameter')
@@ -95,7 +95,7 @@ def parse_args():
             parser.add_argument('--p_dim1', type=int, default=600,
                             help='p_dim1')
 
-        # AgentRerank
+        # AlphaRec
         if('IntentCF' in args.model_name):
             parser.add_argument('--tau', type=float, default=0.1,
                             help='temperature parameter')
@@ -135,8 +135,8 @@ def parse_args():
             parser.add_argument('--droprate', type=float, default=0.1,
                             help='drop out rate for SGL')
 
-        # XSimGCL
-        if(args.model_name == "XSimGCL" or args.model_name == "RLMRec"):
+        # XSimGCL & RLMRec & KAR
+        if(args.model_name == "XSimGCL" or args.model_name == "RLMRec" or args.model_name == "KAR"):
             parser.add_argument('--lambda_cl', type=float, default=0.1,
                                 help='Rate of contrastive loss')
             parser.add_argument('--temp_cl', type=float, default=0.15,
@@ -151,6 +151,7 @@ def parse_args():
                             help='temperature parameter')
             parser.add_argument('--kd_weight', type=float, default=1e-2,
                             help='kd_weight')
+            
 
     if(args.rs_type == 'Seq'):
         parser.add_argument('--r_click', type=float, default=0.2,
@@ -211,16 +212,30 @@ def parse_args():
                                 help='If True, masks out inputs in loss')
             parser.add_argument('--not_group_by_length', action="store_true",
                                 help='If False, groups samples by length')
-        # if(args.model_name == 'PerRec'):
-        #     parser.add_argument('--llm_path', type=str, default='meta-llama/Llama-2-7b-hf',
-        #                     help='path to llm model')
-
-    # args_full, _ = parser.parse_known_args()
-
-    # return args_full
 
     args_full, _ = parser.parse_known_args()
     special_args = list(set(vars(args_full).keys()) - set(vars(args).keys()))
     special_args.sort()
+    
+    if(args.model_name == 'UniSRec'):
+        args_full.n_layers = 2
+        args_full.n_heads = 2
+        args_full.hidden_size = 300
+        args_full.plm_hidden_size = 768
+        args_full.inner_size = 256
+        args_full.hidden_dropout_prob = 0.5
+        args_full.attn_dropout_prob = 0.5
+        args_full.hidden_act = 'gelu'
+        args_full.layer_norm_eps = 1e-12
+        args_full.initializer_range = 0.02
+        args_full.loss_type = 'CE'
+        args_full.item_drop_ratio = 0.2
+        args_full.lambda_ = 1e-3
+        args_full.train_stage = 'pretrain'
+        args_full.adaptor_dropout_prob = 0.2
+        args_full.adaptor_layers = [768, 300]
+        args_full.temperature = 0.07
+        args_full.n_exps = 8
+        args_full.max_seq_length = 20
 
     return args_full, special_args

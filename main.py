@@ -5,17 +5,19 @@ import torch
 
 if __name__ == '__main__':
     args, special_args = parse_args()
+    print(args)
 
     fix_seeds(args.seed) # set random seed
 
     rs_type = args.rs_type # LLM, Seq, General, etc.
     print(f'from models.{rs_type}.'+ args.model_name + ' import ' + args.model_name + '_RS')
-    from models.General.SGL import SGL_RS
+    # from models.General.UniSRec import UniSRec_RS
     try:
         exec(f'from models.{args.rs_type}.'+ args.model_name + ' import ' + args.model_name + '_RS') # load the model
     except:
         print('Model %s not implemented!' % (args.model_name))
     
+    # RS = UniSRec_RS(args, special_args)
     try:
         RS = eval(args.model_name + '_RS(args, special_args)') # load the recommender system
     except:
