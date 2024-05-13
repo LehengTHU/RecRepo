@@ -47,6 +47,7 @@ class AbstractRS(nn.Module):
         # load the data
         self.dataset_name = args.dataset
         # from models.General.IntentCF import IntentCF_Data
+        # self.data = IntentCF_Data(args)
         # from models.General.UniSRec import UniSRec_Data
         # self.data = UniSRec_Data(args)
         try:
@@ -69,6 +70,8 @@ class AbstractRS(nn.Module):
 
         # load the model
         self.running_model = args.model_name + '_batch' if self.inbatch else args.model_name
+        # from models.General.IntentCF import IntentCF
+        # self.model = IntentCF(args, self.data) # initialize the model with the graph
         exec('from models.General.'+ args.model_name + ' import ' + self.running_model) # import the model first
         self.model = eval(self.running_model + '(args, self.data)') # initialize the model with the graph
         self.model.cuda(self.device)
@@ -112,7 +115,7 @@ class AbstractRS(nn.Module):
             n_rets[self.eval_names[i]] = n_ret
 
         self.recommend_top_k()
-        self.document_hyper_params_results(self.base_path, n_rets)
+        # self.document_hyper_params_results(self.base_path, n_rets)
         
 
     def save_args(self):

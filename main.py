@@ -18,6 +18,8 @@ if __name__ == '__main__':
         print('Model %s not implemented!' % (args.model_name))
     
     # RS = UniSRec_RS(args, special_args)
+    # from models.General.IntentCF import IntentCF_RS
+    # RS = IntentCF_RS(args, special_args)
     try:
         RS = eval(args.model_name + '_RS(args, special_args)') # load the recommender system
     except:

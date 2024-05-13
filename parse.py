@@ -37,6 +37,8 @@ def parse_args():
     # Model Args
     parser.add_argument('--batch_size', type=int, default=4096,
                         help='Batch size.')
+    # parser.add_argument('--batch_size', type=int, default=128,
+                        # help='Batch size.')
     # parser.add_argument('--lr', type=float, default=0.001,
     #                     help='Learning rate.')
     parser.add_argument('--lr', type=float, default=5e-4,
@@ -83,6 +85,28 @@ def parse_args():
         if(args.model_name == 'InfoNCE'):
             parser.add_argument('--tau', type=float, default=0.1,
                             help='temperature parameter')
+
+        #AdvInfoNCE
+        if(args.model_name == 'AdvInfoNCE'):
+            parser.add_argument('--tau', type=float, default=0.1,
+                            help='temperature parameter')
+            parser.add_argument('--eta_epochs', type=int, default=7,
+                                help='epochs for eta, control the disturbance of adv training')
+            parser.add_argument('--adv_lr', type=float, default=5e-5,
+                                help='Learning rate for adversarial training.')
+            parser.add_argument('--model_version', type=str, default='embed',
+                                help='model type, mlp or embed')
+            
+            parser.add_argument('--adv_interval',type=int,default=5,
+                                help='the interval of adversarial training')
+            parser.add_argument('--warm_up_epochs', type=int, default=0,
+                                help='warm up epochs, in this stage, adv training is not used')
+            parser.add_argument('--k_neg', type=float, default=64,
+                                help='k_neg for negative sampling')
+            parser.add_argument('--adv_epochs',type=int,default=1,
+                                help='the epoch of adversarial training')
+            parser.add_argument('--w_embed_size',type=int,default=64,
+                                help='dimension of weight embedding')
         
         # MultVAE
         if(args.model_name == 'MultVAE'):
@@ -96,9 +120,15 @@ def parse_args():
                             help='p_dim1')
 
         # AlphaRec
-        if('IntentCF' in args.model_name):
+        if(('IntentCF' in args.model_name) or ('AlphaRec' in args.model_name)):
             parser.add_argument('--tau', type=float, default=0.1,
                             help='temperature parameter')
+            parser.add_argument('--lm_model', type=str, default='v3',
+                        choices=['bert', 'llama2_7b', 'mistral_7b', 'v2', 'v3', 'SFR'],
+                        help='The base language model')
+            parser.add_argument('--model_version', type=str, default='homo',
+                        choices=['mlp', 'homo'],
+                        help='The mapping method')
 
         if('LIntCF' in args.model_name):
             parser.add_argument('--tau', type=float, default=0.1,

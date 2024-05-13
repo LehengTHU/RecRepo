@@ -50,10 +50,30 @@ class AlphaRec_Data(AbstractData):
         super().__init__(args)
     
     def add_special_model_attr(self, args):
+        self.lm_model = args.lm_model
         loading_path = args.data_path + args.dataset + '/item_info/'
+        embedding_path_dict = {
+            'bert': 'item_cf_embeds_bert_array.npy',
+            'v2': 'item_cf_embeds_array.npy',
+            'v3': 'item_cf_embeds_large3_array.npy',
+            'llama2_7b': 'item_cf_embeds_llama2_7b_array.npy',
+            'mistral_7b': 'item_cf_embeds_Norm_Mistral-7B-v0.1_array.npy',
+            'SFR': 'item_cf_embeds_Norm_SFR-Embedding-Mistral_7b_array.npy',
+            'GritLM_7b': 'item_cf_embeds_Norm_GritLM-7B_array.npy',
+            'e5_7b': 'item_cf_embeds_Norm_e5-mistral-7b-instruct_array.npy',
+            'echo_7b': 'item_cf_embeds_Norm_echo-mistral-7b-instruct-lasttoken_array.npy',
+        }
+        self.item_cf_embeds = np.load(loading_path + embedding_path_dict[self.lm_model])
         # self.item_cf_embeds = np.load(loading_path + 'item_cf_embeds_bert_array.npy') # bert
         # self.item_cf_embeds = np.load(loading_path + 'item_cf_embeds_array.npy') # v2
-        self.item_cf_embeds = np.load(loading_path + 'item_cf_embeds_large3_array.npy') # v3
+        # self.item_cf_embeds = np.load(loading_path + 'item_cf_embeds_large3_array.npy') # v3
+        # self.item_cf_embeds = np.load(loading_path + 'item_cf_embeds_llama2_7b_array.npy') # llama2 7b
+        # self.item_cf_embeds = np.load(loading_path + 'item_cf_embeds_Norm_SFR-Embedding-Mistral_7b_array.npy') # Norm_SFR-Embedding-Mistral_7b
+        # self.item_cf_embeds = np.load(loading_path + 'item_cf_embeds_Norm_GritLM-7B_array.npy') # Norm_GritLM
+        # self.item_cf_embeds = np.load(loading_path + 'item_cf_embeds_Norm_e5-mistral-7b-instruct_array.npy') # Norm_e5
+        # self.item_cf_embeds = np.load(loading_path + 'item_cf_embeds_Norm_echo-mistral-7b-instruct-lasttoken_array.npy') # Norm_echo
+        # self.item_cf_embeds = np.load(loading_path + 'item_cf_embeds_Norm_Mistral-7B-v0.1_array.npy') # Norm_Mistral-7B-v0.1
+
 
         def group_agg(group_data, embedding_dict, key='item_id'):
             ids = group_data[key].values
@@ -68,7 +88,7 @@ class AlphaRec_Data(AbstractData):
                 pairs.append((u, i))
         pairs = pd.DataFrame(pairs, columns=['user_id', 'item_id'])
         
-        # User CF Embedding
+        # User CF Embedding: the average of item embeddings
         groups = pairs.groupby('user_id')
         item_cf_embeds_dict = {i:self.item_cf_embeds[i] for i in range(len(self.item_cf_embeds))}
         user_cf_embeds = groups.apply(group_agg, embedding_dict=item_cf_embeds_dict, key='item_id')
@@ -82,6 +102,8 @@ class AlphaRec(AbstractModel):
         super().__init__(args, data)
         self.tau = args.tau
         self.embed_size = args.hidden_size
+        self.lm_model = args.lm_model
+        self.model_version = args.model_version
 
         self.init_user_cf_embeds = data.user_cf_embeds
         self.init_item_cf_embeds = data.item_cf_embeds
@@ -90,6 +112,34 @@ class AlphaRec(AbstractModel):
         self.init_item_cf_embeds = torch.tensor(self.init_item_cf_embeds, dtype=torch.float32).cuda(self.device)
 
         self.init_embed_shape = self.init_user_cf_embeds.shape[1]
+        
+        # To keep the same parameter size
+        multiplier_dict = {
+            'bert': 8,
+            'v2': 2,
+            'v3': 1/2,
+        } 
+        if(self.lm_model in multiplier_dict):
+            multiplier = multiplier_dict[self.lm_model]
+        else:
+            multiplier = 9/32 # for dimension = 4096
+
+        if(self.model_version == 'homo'): # Linear mapping
+            self.mlp = nn.Sequential(
+            nn.Linear(self.init_embed_shape, self.embed_size, bias = False) # homo
+            )
+            # self.mlp = nn.Sequential(
+            #     nn.Linear(self.init_embed_shape, int(multiplier * self.init_embed_shape)),
+            #     # nn.LeakyReLU(),
+            #     nn.Linear(int(multiplier * self.init_embed_shape), self.embed_size)
+            # )
+
+        else: # MLP
+            self.mlp = nn.Sequential(
+                nn.Linear(self.init_embed_shape, int(multiplier * self.init_embed_shape)),
+                nn.LeakyReLU(),
+                nn.Linear(int(multiplier * self.init_embed_shape), self.embed_size)
+            )
 
         # self.mlp = nn.Sequential(
         #     nn.Linear(self.init_embed_shape, self.init_embed_shape//8),
@@ -129,11 +179,34 @@ class AlphaRec(AbstractModel):
         #     nn.Linear(self.init_embed_shape//2, self.embed_size, bias = False)
         # )
         
-        self.mlp = nn.Sequential(
-            nn.Linear(self.init_embed_shape, self.init_embed_shape//2), # v3
-            nn.LeakyReLU(),
-            nn.Linear(self.init_embed_shape//2, self.embed_size)
-        )
+        # self.mlp = nn.Sequential(
+        #     nn.Linear(self.init_embed_shape, self.init_embed_shape//2), # v3
+        #     # nn.LeakyReLU(),
+        #     nn.Linear(self.init_embed_shape//2, self.embed_size)
+        # )
+        
+        # self.mlp = nn.Sequential(
+        #     nn.Linear(self.init_embed_shape, (9*self.init_embed_shape)//32, bias = False), # 4096 linear
+        #     nn.Linear((9*self.init_embed_shape)//32, self.embed_size, bias = False)
+        # )
+        
+        # self.mlp = nn.Sequential(
+        #     nn.Linear(self.init_embed_shape, (9*self.init_embed_shape)//32), # 4096
+        #     nn.LeakyReLU(),
+        #     nn.Linear((9*self.init_embed_shape)//32, self.embed_size)
+        # )
+
+        # self.mlp = nn.Sequential(
+        #     nn.Linear(self.init_embed_shape, self.embed_size, bias = False) # homo
+        # )
+
+        # self.mlp = nn.Sequential(
+        #     nn.Linear(self.init_embed_shape, self.init_embed_shape//2), # v3 more layers
+        #     nn.LeakyReLU(),
+        #     nn.Linear(self.init_embed_shape//2, self.init_embed_shape//4),
+        #     nn.LeakyReLU(),
+        #     nn.Linear(self.init_embed_shape//4, self.embed_size)
+        # )
 
     def init_embedding(self):
         pass
