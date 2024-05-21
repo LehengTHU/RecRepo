@@ -6,7 +6,7 @@ def parse_args():
     parser.add_argument('--suffix', nargs='?', default='',
                     help='prefix for dataset')
     parser.add_argument('--lm_model', type=str, default='v3',
-                choices=['bert', 'llama2_7b', 'mistral_7b', 'v2', 'v3', 'SFR'],
+                choices=['bert', 'roberta', 'llama2_7b', 'llama3_7b', 'mistral_7b', 'v2', 'v3', 'SFR', 'v3_shuffle'],
                 help='The base language model')
     parser.add_argument('--model_version', type=str, default='homo',
                 choices=['mlp', 'homo'],
@@ -45,7 +45,7 @@ for idx, tau in enumerate(tau_list):
     print('tau:', tau)
     dataset = dataset_list[idx]
     save_id = 'tau_' + str(tau) + '_' + lm_model + '_' + model_version + '_' + suffix
-    log_name = dataset + '_' + save_id
+    log_name = dataset + '_' + save_id + '_' + str(n_layer)
     filled_prompt = prompt.replace('<model_name>', model_name)
     filled_prompt = filled_prompt.replace('<dataset_name>', dataset)
     filled_prompt = filled_prompt.replace('<lm_model>', lm_model)

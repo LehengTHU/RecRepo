@@ -55,7 +55,6 @@ class MF(AbstractModel):
         posEmb0 = self.embed_item(pos_items)
         negEmb0 = self.embed_item(neg_items)
 
-
         pos_scores = torch.sum(torch.mul(users_emb, pos_emb), dim=1)  # users, pos_items, neg_items have the same shape
         neg_scores = torch.sum(torch.mul(users_emb, neg_emb), dim=1)
 

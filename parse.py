@@ -124,7 +124,7 @@ def parse_args():
             parser.add_argument('--tau', type=float, default=0.1,
                             help='temperature parameter')
             parser.add_argument('--lm_model', type=str, default='v3',
-                        choices=['bert', 'llama2_7b', 'mistral_7b', 'v2', 'v3', 'SFR'],
+                        choices=['bert', 'roberta', 'llama2_7b', 'llama3_7b', 'mistral_7b', 'v2', 'v3', 'SFR', 'v3_shuffle'],
                         help='The base language model')
             parser.add_argument('--model_version', type=str, default='homo',
                         choices=['mlp', 'homo'],
