@@ -247,22 +247,13 @@ class AlphaRec(AbstractModel):
         pos_emb = all_items[pos_items]
         neg_emb = all_items[neg_items]
 
-        if(self.train_norm):
-            users_emb = F.normalize(users_emb, dim = -1)
-            pos_emb = F.normalize(pos_emb, dim = -1)
-            neg_emb = F.normalize(neg_emb, dim = -1)
+        pos_scores = torch.sum(torch.mul(users_emb, pos_emb), dim=1)  # users, pos_items, neg_items have the same shape
+        neg_scores = torch.sum(torch.mul(users_emb, neg_emb), dim=1)
         
-        pos_ratings = torch.sum(users_emb*pos_emb, dim = -1)
-        neg_ratings = torch.matmul(torch.unsqueeze(users_emb, 1), 
-                                       neg_emb.permute(0, 2, 1)).squeeze(dim=1)
+        maxi = torch.log(torch.sigmoid(pos_scores - neg_scores) + 1e-10)
+        mf_loss = torch.negative(torch.mean(maxi))
 
-        numerator = torch.exp(pos_ratings / self.tau)
-
-        denominator = numerator + torch.sum(torch.exp(neg_ratings / self.tau), dim = 1)
-        
-        ssm_loss = torch.mean(torch.negative(torch.log(numerator/denominator)))
-
-        return ssm_loss
+        return mf_loss
 
     @torch.no_grad()
     def predict(self, users, items=None):
@@ -273,10 +264,7 @@ class AlphaRec(AbstractModel):
         
         users = all_users[torch.tensor(users).cuda(self.device)]
         items = all_items[torch.tensor(items).cuda(self.device)]
-        
-        if(self.pred_norm == True):
-            users = F.normalize(users, dim = -1)
-            items = F.normalize(items, dim = -1)
+
         items = torch.transpose(items, 0, 1)
         rate_batch = torch.matmul(users, items) # user * item
 
